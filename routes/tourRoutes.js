@@ -5,7 +5,7 @@ const router = express.Router();
 
 // ----- param middleware -----
 // if there's no id param (:id), then it won't run
-router.param('id', tourController.checkID);
+// router.param('id', tourController.checkID);
 
 // Create a checkBody middleware --> in tourController.js
 // Check if body contains the name and price property
@@ -16,7 +16,7 @@ router.param('id', tourController.checkID);
 router
     .route('/')
     .get(tourController.getAllTours)
-    .post(tourController.checkBody, tourController.createTour); //run checkBody middleware first and if pass then run createTour middleware afterwards
+    .post(tourController.createTour); //run checkBody middleware first and if pass then run createTour middleware afterwards
 
     router
     .route("/:id")
