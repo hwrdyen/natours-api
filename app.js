@@ -1,29 +1,31 @@
-const fs = require("fs");
-const express = require("express");
-const morgan = require("morgan");
+// const fs = require('fs');
+const express = require('express');
+const morgan = require('morgan');
 
-const tourRouter = require("./routes/tourRoutes");
-const userRouter = require("./routes/userRoutes");
+const AppError = require('./utils/appError');
+const globalErrorHandler = require('./controllers/errorController');
+const tourRouter = require('./routes/tourRoutes');
+const userRouter = require('./routes/userRoutes');
 
 const app = express();
 
 // 1) MIDDLEWARES
-console.log(process.env.NODE_ENV);
-if (process.env.NODE_ENV === "development") {
-    app.use(morgan('dev'));
+// console.log(process.env.NODE_ENV);
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
 }
 app.use(express.json());
 app.use(express.static(`${__dirname}/public`));
 
 // ----- define our own middleware -----
 app.use((req, res, next) => {
-    console.log("Hello from the middleware!");
-    next(); // have to add next() for middleware to go to next one
-})
+  // console.log('Hello from the middleware!');
+  next(); // have to add next() for middleware to go to next one
+});
 app.use((req, res, next) => {
-    req.requestTime = new Date().toISOString();
-    next();
-})
+  req.requestTime = new Date().toISOString();
+  next();
+});
 
 // 2) ROUTE HANDLERS
 // ----- GET/POST call -----
@@ -193,8 +195,31 @@ app.use((req, res, next) => {
 //     .patch(updateUser)
 //     .delete(deleteUser);
 
+// 3) Routes
 app.use('/api/v1/tours', tourRouter); // when it enters "/api/v1/tours", it'll run tourRouter
 app.use('/api/v1/users', userRouter);
+
+// order matters, if put this at the top, it'll go directly into this 404 * response
+// but now it will only go into this 404 * response when it doesnt go into the previous two request
+app.all('*', (req, res, next) => {
+  // (1) method
+  //   res.status(404).json({
+  //     status: 'fail',
+  //     message: `Can't find ${req.originalUrl} on this server!`,
+  //   });
+
+  // (2) method
+  //   const err = new Error(`Can't find ${req.originalUrl} on this server!`);
+  //   err.status = 'fail';
+  //   err.statusCode = 404;
+
+  //if put err inside next(), it'll skip all the middleware and go straight to the error handling middleware directly
+  // (3) method
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+});
+
+// error handling middleware => will only be called when there's an error
+app.use(globalErrorHandler);
 
 // 4) START SERVER
 // const port = 8000

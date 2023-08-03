@@ -1,8 +1,15 @@
-const mongoose = require("mongoose");
-const dotenv = require("dotenv");
-dotenv.config({path: "./config.env"});
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
 
-const app = require("./app");
+process.on('uncaughtException', (err) => {
+  console.log('UNCALLED EXCEPTION! Shutting down...');
+  console.log(err.name, err.message);
+  // 0: success; 1: uncaught exception
+  process.exit(1);
+});
+
+dotenv.config({ path: './config.env' });
+const app = require('./app');
 
 // connect to Local Database
 // mongoose.connect(process.env.DATABASE_LOCAL, {
@@ -12,12 +19,19 @@ const app = require("./app");
 // }).then(() => console.log("Local DB connection successful!"));
 
 // connect to Atlas Database
-const DB = process.env.DATABASE.replace('<PASSWORD>', process.env.DATABASE_PASSWORD);
-mongoose.connect(DB, {
+const DB = process.env.DATABASE.replace(
+  '<PASSWORD>',
+  process.env.DATABASE_PASSWORD,
+);
+
+mongoose
+  .connect(DB, {
     useNewUrlParser: true,
     useCreateIndex: true,
-    useFindAndModify: false
-}).then(() => console.log("DB connection successful!"));
+    useFindAndModify: false,
+  })
+  .then(() => console.log('DB connection successful!'));
+//   .catch((err) => console.log('ERROR'));
 
 // define a tourSchema
 // const tourSchema = new mongoose.Schema({
@@ -55,6 +69,15 @@ mongoose.connect(DB, {
 // console.log(process.env);
 
 const port = process.env.PORT || 8000;
-app.listen(port, () => {
-    console.log(`App running on port ${port}...`);
+const server = app.listen(port, () => {
+  console.log(`App running on port ${port}...`);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.log('UNHANDLER REJECTION! Shutting down...');
+  console.log(err.name, err.message);
+  // 0: success; 1: uncaught exception
+  server.close(() => {
+    process.exit(1);
+  });
 });
